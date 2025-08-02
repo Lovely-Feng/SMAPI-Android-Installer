@@ -1,26 +1,34 @@
-name: Close Spam Issues
+name: Build Android APK
 
 on:
-  schedule:
-    - cron: '*/3 * * * *'  # Runs every 3 minutes
-  workflow_dispatch:
+  push:
+    branches: [ main ]  # 在推送到 main 分支时触发
+  workflow_dispatch:    # 允许手动触发
 
 jobs:
-  close_spam_issues:
+  build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .github/workflows/spam-removal
-    permissions:
-      issues: write
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-      - name: Install dependencies
-        run: npm install
-      - name: Run close spam issues script
-        run: node index.js
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: 赋予 gradlew 执行权限
+      run: chmod +x gradlew
+      
+    - name: 构建 APK
+      run: ./gradlew assembleRelease  # 关键打包命令
+      
+    - name: 上传 APK 产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release
+        path: |
+          */build/outputs/apk/**/*.apk
+          */build/outputs/bundle/**/*.aab
